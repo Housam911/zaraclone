@@ -564,12 +564,12 @@ const ProductForm = ({
                 <SelectItem value="kids">Kids</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={subcategory} onValueChange={setSubcategory}>
+            <Select value={subcategory || "none"} onValueChange={(val) => setSubcategory(val === "none" ? "" : val)}>
               <SelectTrigger className="bg-secondary border-none rounded-none py-5">
                 <SelectValue placeholder="Subcategory" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {subcategories?.map((sub) => (
                   <SelectItem key={sub.id} value={sub.name}>
                     {sub.name}
