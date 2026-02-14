@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,9 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
