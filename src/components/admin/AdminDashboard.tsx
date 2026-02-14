@@ -294,7 +294,7 @@ const ProductForm = ({
   const [category, setCategory] = useState<string>(product?.category || "women");
   const [subcategory, setSubcategory] = useState(product?.subcategory || "");
   const [selectedSizes, setSelectedSizes] = useState<string[]>(product?.sizes || []);
-  const [colorsInput, setColorsInput] = useState(product?.colors?.join(", ") || "");
+  const [selectedColors, setSelectedColors] = useState<string[]>(product?.colors || []);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(product?.image_url || "");
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
@@ -328,6 +328,21 @@ const ProductForm = ({
       prev.includes(sizeName) ? prev.filter((s) => s !== sizeName) : [...prev, sizeName]
     );
   };
+
+  const toggleColor = (colorName: string) => {
+    setSelectedColors((prev) =>
+      prev.includes(colorName) ? prev.filter((c) => c !== colorName) : [...prev, colorName]
+    );
+  };
+
+  const { data: availableColors } = useQuery({
+    queryKey: ["available-colors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("available_colors").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -391,11 +406,6 @@ const ProductForm = ({
         ? [imageUrl, ...uploadedAdditional.filter((u) => u !== imageUrl)]
         : uploadedAdditional;
 
-      const colors = colorsInput
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean);
-
       const productData: TablesInsert<"products"> = {
         name,
         description: description || null,
@@ -406,7 +416,7 @@ const ProductForm = ({
         image_url: imageUrl || null,
         images: allImages.length > 0 ? allImages : null,
         sizes: selectedSizes.length > 0 ? selectedSizes : null,
-        colors: colors.length > 0 ? colors : null,
+        colors: selectedColors.length > 0 ? selectedColors : null,
       };
 
       if (product) {
@@ -596,12 +606,36 @@ const ProductForm = ({
             )}
           </div>
 
-          <Input
-            placeholder="Colors (comma separated, e.g. Black, White, Red)"
-            value={colorsInput}
-            onChange={(e) => setColorsInput(e.target.value)}
-            className="bg-secondary border-none py-5 rounded-none"
-          />
+          {/* Colors checkboxes */}
+          <div>
+            <label className="block text-xs tracking-[0.1em] uppercase font-body font-medium mb-2">
+              Colors
+            </label>
+            {availableColors && availableColors.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {availableColors.map((color) => (
+                  <label
+                    key={color.id}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selectedColors.includes(color.name)}
+                      onCheckedChange={() => toggleColor(color.name)}
+                    />
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-border"
+                      style={{ backgroundColor: color.name.toLowerCase() }}
+                    />
+                    <span className="text-sm font-body capitalize">{color.name}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground font-body">
+                No colors configured. Add them in Settings.
+              </p>
+            )}
+          </div>
 
           <Button
             type="submit"
