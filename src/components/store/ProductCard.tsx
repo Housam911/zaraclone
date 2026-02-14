@@ -1,4 +1,5 @@
 import { ShoppingBag } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 import { useCart } from "@/contexts/CartContext";
 
@@ -13,7 +14,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
     : null;
 
   return (
-    <div className="group cursor-pointer animate-fade-in">
+    <div className="group animate-fade-in">
+      <Link to={`/product/${product.id}`} className="cursor-pointer">
       {/* Image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-secondary mb-4">
         {product.image_url ? (
@@ -42,7 +44,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Quick actions */}
         <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
           <button
-            onClick={() => addItem(product)}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}
             className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground text-center py-3 text-xs tracking-[0.2em] uppercase font-body font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
           >
             <ShoppingBag className="h-4 w-4" />
@@ -50,13 +52,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </button>
         </div>
       </div>
+      </Link>
 
       {/* Info */}
-      <div className="space-y-1">
+      <div className="space-y-1 mt-4">
         <p className="text-xs text-muted-foreground tracking-[0.1em] uppercase font-body">
           {product.category}{product.subcategory ? ` / ${product.subcategory}` : ''}
         </p>
-        <h3 className="font-display text-lg capitalize">{product.name}</h3>
+        <Link to={`/product/${product.id}`}>
+          <h3 className="font-display text-lg capitalize hover:text-accent transition-colors">{product.name}</h3>
+        </Link>
         <div className="flex items-center gap-2">
           {product.original_price && (
             <span className="text-muted-foreground line-through text-sm font-body">
