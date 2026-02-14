@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      available_colors: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       available_sizes: {
         Row: {
           created_at: string
