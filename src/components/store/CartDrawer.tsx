@@ -18,7 +18,7 @@ const CartDrawer = () => {
       (i) => `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ''}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ''} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${i.product.price.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`
     );
     const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${totalPrice.toFixed(2)}` : ''}`;
-    const url = `https://wa.me/96171786787?text=${encodeURIComponent(text)}`;
+    const url = `https://web.whatsapp.com/send?phone=96171786787&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 
