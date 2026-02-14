@@ -11,16 +11,17 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const { data: headerText } = useQuery({
-    queryKey: ["header-announcement"],
+  const { data: settings } = useQuery({
+    queryKey: ["navbar-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_settings")
-        .select("value")
-        .eq("key", "header_announcement")
-        .maybeSingle();
-      if (error || !data) return null;
-      return data.value;
+        .select("key, value")
+        .in("key", ["header_announcement", "store_name"]);
+      if (error || !data) return {};
+      const map: Record<string, string> = {};
+      data.forEach((s) => (map[s.key] = s.value));
+      return map;
     },
     staleTime: 60_000,
   });
@@ -29,7 +30,7 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       {/* Top bar */}
       <div className="bg-primary text-primary-foreground text-center py-2 text-xs tracking-[0.2em] uppercase font-body">
-        {headerText || "Free shipping on orders over $100"}
+        {settings?.header_announcement || "Free shipping on orders over $100"}
       </div>
 
       <nav className="container mx-auto px-4 lg:px-8">
@@ -44,7 +45,7 @@ const Navbar = () => {
 
           {/* Logo */}
           <Link to="/" className="font-display text-2xl tracking-[0.15em] uppercase font-semibold">
-            MY SHOP
+            {settings?.store_name || "MY SHOP"}
           </Link>
 
           {/* Desktop nav */}
