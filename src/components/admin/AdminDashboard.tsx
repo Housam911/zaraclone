@@ -291,6 +291,12 @@ const ProductForm = ({
   const [description, setDescription] = useState(product?.description || "");
   const [price, setPrice] = useState(product?.price?.toString() || "");
   const [originalPrice, setOriginalPrice] = useState(product?.original_price?.toString() || "");
+  const [discountPercent, setDiscountPercent] = useState(() => {
+    if (product?.original_price && product?.price) {
+      return Math.round(((product.original_price - product.price) / product.original_price) * 100).toString();
+    }
+    return "";
+  });
   const [category, setCategory] = useState<string>(product?.category || "women");
   const [subcategory, setSubcategory] = useState(product?.subcategory || "");
   const [selectedSizes, setSelectedSizes] = useState<string[]>(product?.sizes || []);
@@ -533,22 +539,60 @@ const ProductForm = ({
             rows={3}
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <Input
               type="number"
               step="0.01"
-              placeholder="Price"
+              placeholder="Sale Price"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => {
+                setPrice(e.target.value);
+                if (discountPercent && e.target.value) {
+                  const p = parseFloat(e.target.value);
+                  const d = parseFloat(discountPercent);
+                  if (d > 0 && d < 100) setOriginalPrice((p / (1 - d / 100)).toFixed(2));
+                }
+              }}
               required
               className="bg-secondary border-none py-5 rounded-none"
             />
             <Input
               type="number"
+              step="1"
+              min="0"
+              max="99"
+              placeholder="Discount %"
+              value={discountPercent}
+              onChange={(e) => {
+                const d = e.target.value;
+                setDiscountPercent(d);
+                if (d && price) {
+                  const p = parseFloat(price);
+                  const disc = parseFloat(d);
+                  if (disc > 0 && disc < 100) {
+                    setOriginalPrice((p / (1 - disc / 100)).toFixed(2));
+                  }
+                } else if (!d) {
+                  setOriginalPrice("");
+                }
+              }}
+              className="bg-secondary border-none py-5 rounded-none"
+            />
+            <Input
+              type="number"
               step="0.01"
-              placeholder="Original price (optional)"
+              placeholder="Original price"
               value={originalPrice}
-              onChange={(e) => setOriginalPrice(e.target.value)}
+              onChange={(e) => {
+                setOriginalPrice(e.target.value);
+                if (e.target.value && price) {
+                  const op = parseFloat(e.target.value);
+                  const p = parseFloat(price);
+                  if (op > p) setDiscountPercent(Math.round(((op - p) / op) * 100).toString());
+                } else if (!e.target.value) {
+                  setDiscountPercent("");
+                }
+              }}
               className="bg-secondary border-none py-5 rounded-none"
             />
           </div>
