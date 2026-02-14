@@ -1,33 +1,62 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import heroBanner1 from "@/assets/hero-banner.jpg";
 import heroBanner2 from "@/assets/hero-banner-2.jpg";
 import heroBanner3 from "@/assets/hero-banner-3.jpg";
 
-const slides = [
+const fallbackSlides = [
   {
-    image: heroBanner1,
+    image_url: heroBanner1,
     subtitle: "New Collection 2026",
-    title: ["MY", "SHOP"],
+    title_line1: "MY",
+    title_line2: "SHOP",
     description: "Discover curated pieces that define modern sophistication. Where luxury meets everyday wearability.",
   },
   {
-    image: heroBanner2,
+    image_url: heroBanner2,
     subtitle: "Men's Essentials",
-    title: ["TAILORED", "ELEGANCE"],
+    title_line1: "TAILORED",
+    title_line2: "ELEGANCE",
     description: "Refined silhouettes and impeccable craftsmanship for the modern gentleman.",
   },
   {
-    image: heroBanner3,
+    image_url: heroBanner3,
     subtitle: "Luxury Accessories",
-    title: ["TIMELESS", "DETAILS"],
+    title_line1: "TIMELESS",
+    title_line2: "DETAILS",
     description: "Statement pieces that elevate every outfit. Curated leather goods and accessories.",
   },
 ];
 
+const fallbackImages = [heroBanner1, heroBanner2, heroBanner3];
+
 const HeroSection = () => {
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const { data: dbSlides } = useQuery({
+    queryKey: ["hero-slides"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hero_slides")
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const slides = dbSlides && dbSlides.length > 0
+    ? dbSlides.map((s, i) => ({
+        image_url: s.image_url || fallbackImages[i % fallbackImages.length],
+        subtitle: s.subtitle,
+        title_line1: s.title_line1,
+        title_line2: s.title_line2,
+        description: s.description,
+      }))
+    : fallbackSlides;
 
   const goTo = useCallback(
     (index: number) => {
@@ -39,8 +68,8 @@ const HeroSection = () => {
     [isTransitioning]
   );
 
-  const next = useCallback(() => goTo((current + 1) % slides.length), [current, goTo]);
-  const prev = useCallback(() => goTo((current - 1 + slides.length) % slides.length), [current, goTo]);
+  const next = useCallback(() => goTo((current + 1) % slides.length), [current, goTo, slides.length]);
+  const prev = useCallback(() => goTo((current - 1 + slides.length) % slides.length), [current, goTo, slides.length]);
 
   useEffect(() => {
     const timer = setInterval(next, 5000);
@@ -49,7 +78,6 @@ const HeroSection = () => {
 
   return (
     <section className="relative h-[85vh] min-h-[600px] overflow-hidden">
-      {/* Slides */}
       {slides.map((slide, i) => (
         <div
           key={i}
@@ -57,7 +85,7 @@ const HeroSection = () => {
           style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
         >
           <img
-            src={slide.image}
+            src={slide.image_url}
             alt={slide.subtitle}
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -65,7 +93,6 @@ const HeroSection = () => {
         </div>
       ))}
 
-      {/* Content */}
       <div className="relative z-10 h-full container mx-auto px-4 lg:px-8 flex items-center">
         <div className="max-w-xl space-y-8">
           <div className="space-y-2">
@@ -83,9 +110,9 @@ const HeroSection = () => {
             className="font-display text-5xl sm:text-6xl lg:text-8xl text-primary-foreground leading-[0.95] animate-fade-in"
             style={{ animationDelay: "0.15s" }}
           >
-            {slides[current].title[0]}
+            {slides[current].title_line1}
             <br />
-            <span className="italic font-normal">{slides[current].title[1]}</span>
+            <span className="italic font-normal">{slides[current].title_line2}</span>
           </h1>
 
           <p
@@ -113,7 +140,6 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Navigation arrows */}
       <button
         onClick={prev}
         className="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center border border-primary-foreground/30 text-primary-foreground/70 hover:border-gold hover:text-gold transition-colors backdrop-blur-sm"
@@ -129,7 +155,6 @@ const HeroSection = () => {
         <ChevronRight className="w-5 h-5" />
       </button>
 
-      {/* Dots */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
         {slides.map((_, i) => (
           <button
