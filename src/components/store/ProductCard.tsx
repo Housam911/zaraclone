@@ -2,6 +2,7 @@ import { ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 import { useCart } from "@/contexts/CartContext";
+import { useGlobalDiscount, getEffectivePricing } from "@/hooks/use-global-discount";
 
 interface ProductCardProps {
   product: Tables<"products">;
@@ -9,9 +10,8 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
-  const discount = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
-    : null;
+  const { data: globalDiscount = 0 } = useGlobalDiscount();
+  const { displayPrice, originalPrice, discountPercent } = getEffectivePricing(product, globalDiscount);
 
   return (
     <div className="group animate-fade-in">
@@ -32,9 +32,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
         )}
 
         {/* Discount badge */}
-        {discount && (
+        {discountPercent && (
           <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-xs font-body font-semibold px-2.5 py-1 tracking-wider">
-            -{discount}%
+            -{discountPercent}%
           </span>
         )}
 
@@ -63,13 +63,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <h3 className="font-display text-lg capitalize hover:text-accent transition-colors">{product.name}</h3>
         </Link>
         <div className="flex items-center gap-2">
-          {product.original_price && (
+          {originalPrice && (
             <span className="text-muted-foreground line-through text-sm font-body">
-              ${product.original_price.toFixed(2)}
+              ${originalPrice.toFixed(2)}
             </span>
           )}
           <span className="font-body font-semibold text-base">
-            ${product.price.toFixed(2)}
+            ${displayPrice.toFixed(2)}
           </span>
         </div>
       </div>

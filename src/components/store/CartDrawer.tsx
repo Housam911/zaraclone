@@ -1,5 +1,6 @@
 import { Minus, Plus, Trash2, ShoppingBag, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useGlobalDiscount, getEffectivePricing } from "@/hooks/use-global-discount";
 import {
   Sheet,
   SheetContent,
@@ -12,12 +13,19 @@ import { Separator } from "@/components/ui/separator";
 
 const CartDrawer = () => {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
+  const { data: globalDiscount = 0 } = useGlobalDiscount();
+
+  const effectiveTotal = items.reduce((sum, i) => {
+    const { displayPrice } = getEffectivePricing(i.product, globalDiscount);
+    return sum + displayPrice * i.quantity;
+  }, 0);
 
   const whatsappOrder = () => {
-    const lines = items.map(
-      (i) => `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ''}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ''} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${i.product.price.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`
-    );
-    const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${totalPrice.toFixed(2)}` : ''}`;
+    const lines = items.map((i) => {
+      const { displayPrice } = getEffectivePricing(i.product, globalDiscount);
+      return `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ''}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ''} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${displayPrice.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`;
+    });
+    const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${effectiveTotal.toFixed(2)}` : ''}`;
     const url = `https://web.whatsapp.com/send?phone=96171786787&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
@@ -40,8 +48,10 @@ const CartDrawer = () => {
         ) : (
           <>
             <div className="flex-1 overflow-y-auto space-y-4 py-4">
-              {items.map((item) => (
-                <div key={item.product.id} className="flex gap-4">
+              {items.map((item) => {
+                const { displayPrice } = getEffectivePricing(item.product, globalDiscount);
+                return (
+                <div key={`${item.product.id}-${item.selectedSize || ''}-${item.selectedColor || ''}`} className="flex gap-4">
                   {/* Thumbnail */}
                   <div className="w-20 h-24 bg-secondary flex-shrink-0 overflow-hidden">
                     {item.product.image_url ? (
@@ -72,7 +82,7 @@ const CartDrawer = () => {
                         </p>
                       )}
                       <p className="font-body font-semibold text-sm mt-0.5">
-                        ${item.product.price.toFixed(2)}
+                        ${displayPrice.toFixed(2)}
                       </p>
                     </div>
 
@@ -101,13 +111,14 @@ const CartDrawer = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="border-t border-border pt-4 space-y-4">
               <div className="flex justify-between items-center">
                 <span className="font-body text-sm tracking-wider uppercase">Total</span>
-                <span className="font-display text-lg">${totalPrice.toFixed(2)}</span>
+                <span className="font-display text-lg">${effectiveTotal.toFixed(2)}</span>
               </div>
 
               <Button
