@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useGlobalDiscount, getEffectivePricing } from "@/hooks/use-global-discount";
 import Navbar from "@/components/store/Navbar";
 import Footer from "@/components/store/Footer";
 import CartDrawer from "@/components/store/CartDrawer";
@@ -15,10 +16,12 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const { data: globalDiscount = 0 } = useGlobalDiscount();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
@@ -65,6 +68,8 @@ const ProductDetail = () => {
     );
   }
 
+  const { displayPrice, originalPrice, discountPercent } = getEffectivePricing(product, globalDiscount);
+
   // Build image list from image_url + images array
   const allImages: string[] = [];
   if (product.image_url) allImages.push(product.image_url);
@@ -73,10 +78,6 @@ const ProductDetail = () => {
       if (img && !allImages.includes(img)) allImages.push(img);
     });
   }
-
-  const discount = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
-    : null;
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
@@ -104,7 +105,6 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Image Gallery */}
           <div className="space-y-4">
-            {/* Main image */}
             <div className="aspect-[3/4] bg-secondary overflow-hidden">
               {allImages.length > 0 ? (
                 <img
@@ -119,7 +119,6 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Thumbnails */}
             {allImages.length > 1 && (
               <div className="flex gap-3 overflow-x-auto">
                 {allImages.map((img, idx) => (
@@ -139,7 +138,6 @@ const ProductDetail = () => {
 
           {/* Product Info */}
           <div className="space-y-8">
-            {/* Category & Name */}
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground tracking-[0.2em] uppercase font-body">
                 {product.category}
@@ -152,20 +150,19 @@ const ProductDetail = () => {
 
             {/* Price */}
             <div className="flex items-baseline gap-3">
-              {product.original_price && (
+              {originalPrice && (
                 <span className="text-muted-foreground line-through text-lg font-body">
-                  ${product.original_price.toFixed(2)}
+                  ${originalPrice.toFixed(2)}
                 </span>
               )}
-              <span className="font-display text-3xl">${product.price.toFixed(2)}</span>
-              {discount && (
+              <span className="font-display text-3xl">${displayPrice.toFixed(2)}</span>
+              {discountPercent && (
                 <span className="bg-accent text-accent-foreground text-xs font-body font-semibold px-2.5 py-1 tracking-wider">
-                  -{discount}%
+                  -{discountPercent}%
                 </span>
               )}
             </div>
 
-            {/* Description */}
             {product.description && (
               <p className="font-body text-muted-foreground leading-relaxed">
                 {product.description}
@@ -252,7 +249,6 @@ const ProductDetail = () => {
               </button>
             </div>
 
-            {/* Stock */}
             <p className={`font-body text-xs tracking-wider ${product.in_stock ? "text-green-600" : "text-destructive"}`}>
               {product.in_stock ? "In Stock" : "Out of Stock"}
             </p>
