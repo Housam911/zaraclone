@@ -194,8 +194,14 @@ const ProductForm = ({
   const [originalPrice, setOriginalPrice] = useState(product?.original_price?.toString() || "");
   const [category, setCategory] = useState<string>(product?.category || "women");
   const [subcategory, setSubcategory] = useState(product?.subcategory || "");
+  const [sizesInput, setSizesInput] = useState(product?.sizes?.join(", ") || "");
+  const [colorsInput, setColorsInput] = useState(product?.colors?.join(", ") || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(product?.image_url || "");
+  const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
+  const [additionalPreviews, setAdditionalPreviews] = useState<string[]>(
+    product?.images?.filter((img): img is string => !!img && img !== product?.image_url) || []
+  );
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -208,6 +214,17 @@ const ProductForm = ({
     }
   };
 
+  const handleAdditionalImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setAdditionalFiles((prev) => [...prev, ...files]);
+    setAdditionalPreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    setAdditionalFiles((prev) => prev.filter((_, i) => i !== index - (additionalPreviews.length - additionalFiles.length)));
+    setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -215,20 +232,50 @@ const ProductForm = ({
     try {
       let imageUrl = product?.image_url || "";
 
-      // Upload image if new one selected
+      // Upload main image if new one selected
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+        const fileName = `${Date.now()}-main.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from("product-images")
           .upload(fileName, imageFile);
         if (uploadError) throw uploadError;
-
         const { data: urlData } = supabase.storage
           .from("product-images")
           .getPublicUrl(fileName);
         imageUrl = urlData.publicUrl;
       }
+
+      // Upload additional images
+      const existingAdditional = additionalPreviews.filter(
+        (p) => p.startsWith("http") && !p.startsWith("blob:")
+      );
+      const uploadedAdditional: string[] = [...existingAdditional];
+      for (const file of additionalFiles) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(fileName, file);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(fileName);
+        uploadedAdditional.push(urlData.publicUrl);
+      }
+
+      const allImages = imageUrl
+        ? [imageUrl, ...uploadedAdditional.filter((u) => u !== imageUrl)]
+        : uploadedAdditional;
+
+      const sizes = sizesInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const colors = colorsInput
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
 
       const productData: TablesInsert<"products"> = {
         name,
@@ -238,6 +285,9 @@ const ProductForm = ({
         category: category as TablesInsert<"products">["category"],
         subcategory: subcategory || null,
         image_url: imageUrl || null,
+        images: allImages.length > 0 ? allImages : null,
+        sizes: sizes.length > 0 ? sizes : null,
+        colors: colors.length > 0 ? colors : null,
       };
 
       if (product) {
@@ -302,6 +352,42 @@ const ProductForm = ({
             </div>
           </div>
 
+          {/* Additional images */}
+          <div>
+            <label className="block text-xs tracking-[0.1em] uppercase font-body font-medium mb-2">
+              Additional Images
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {additionalPreviews.map((preview, idx) => (
+                <div key={idx} className="relative w-20 h-20 bg-secondary overflow-hidden">
+                  <img src={preview} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeAdditionalImage(idx)}
+                    className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => document.getElementById("additional-upload")?.click()}
+                className="w-20 h-20 border-2 border-dashed border-border hover:border-accent/50 flex items-center justify-center text-muted-foreground transition-colors"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+            </div>
+            <input
+              id="additional-upload"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleAdditionalImages}
+              className="hidden"
+            />
+          </div>
+
           <Input
             placeholder="Product name"
             value={name}
@@ -356,6 +442,20 @@ const ProductForm = ({
               className="bg-secondary border-none py-5 rounded-none"
             />
           </div>
+
+          <Input
+            placeholder="Sizes (comma separated, e.g. S, M, L, XL)"
+            value={sizesInput}
+            onChange={(e) => setSizesInput(e.target.value)}
+            className="bg-secondary border-none py-5 rounded-none"
+          />
+
+          <Input
+            placeholder="Colors (comma separated, e.g. Black, White, Red)"
+            value={colorsInput}
+            onChange={(e) => setColorsInput(e.target.value)}
+            className="bg-secondary border-none py-5 rounded-none"
+          />
 
           <Button
             type="submit"
