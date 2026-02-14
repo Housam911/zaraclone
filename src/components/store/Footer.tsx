@@ -22,7 +22,7 @@ const Footer = () => {
             <ul className="space-y-2 font-body text-sm text-primary-foreground/70">
               <li>
                 <a
-                  href="https://wa.me/96179357527"
+                  href="https://wa.me/96171786787"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gold transition-colors"
