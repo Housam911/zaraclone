@@ -7,10 +7,12 @@ import ProductGrid from "@/components/store/ProductGrid";
 import Footer from "@/components/store/Footer";
 import CartDrawer from "@/components/store/CartDrawer";
 import BackToTop from "@/components/store/BackToTop";
+import SaleBanner from "@/components/store/SaleBanner";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SaleBanner />
       <Navbar />
       <CartDrawer />
       <HeroSection />
