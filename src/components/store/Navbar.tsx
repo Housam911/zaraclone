@@ -3,17 +3,33 @@ import { Link } from "react-router-dom";
 import { ShoppingBag, Search, Menu, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/contexts/CartContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
   const { totalItems, setIsOpen } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  const { data: headerText } = useQuery({
+    queryKey: ["header-announcement"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_settings")
+        .select("value")
+        .eq("key", "header_announcement")
+        .maybeSingle();
+      if (error || !data) return null;
+      return data.value;
+    },
+    staleTime: 60_000,
+  });
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       {/* Top bar */}
       <div className="bg-primary text-primary-foreground text-center py-2 text-xs tracking-[0.2em] uppercase font-body">
-        Free shipping on orders over $100
+        {headerText || "Free shipping on orders over $100"}
       </div>
 
       <nav className="container mx-auto px-4 lg:px-8">
