@@ -15,12 +15,11 @@ const CartDrawer = () => {
 
   const whatsappOrder = () => {
     const lines = items.map(
-      (i) => `• ${i.product.name} (x${i.quantity}) - $${(i.product.price * i.quantity).toFixed(2)}`
+      (i) => `${i.product.name} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${i.product.price.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`
     );
-    const message = encodeURIComponent(
-      `Hi, I'd like to order:\n${lines.join("\n")}\n\nTotal: $${totalPrice.toFixed(2)}`
-    );
-    window.location.href = `https://wa.me/96179357527?text=${message}`;
+    const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${totalPrice.toFixed(2)}` : ''}`;
+    const url = `https://api.whatsapp.com/send/?phone=96179357527&text=${encodeURIComponent(text)}&type=phone_number&app_absent=0`;
+    window.open(url, '_blank');
   };
 
   return (
