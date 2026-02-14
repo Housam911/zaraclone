@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingBag, Heart, Search, Menu, X, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShoppingBag, Search, Menu, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useCart } from "@/contexts/CartContext";
 
-interface NavbarProps {
-  cartCount?: number;
-  wishlistCount?: number;
-}
-
-const Navbar = ({ cartCount = 0, wishlistCount = 0 }: NavbarProps) => {
+const Navbar = () => {
+  const { totalItems, setIsOpen } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -46,6 +42,14 @@ const Navbar = ({ cartCount = 0, wishlistCount = 0 }: NavbarProps) => {
           <div className="flex items-center gap-3">
             <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 hover:text-accent transition-colors">
               <Search className="h-5 w-5" />
+            </button>
+            <button onClick={() => setIsOpen(true)} className="relative p-2 hover:text-accent transition-colors">
+              <ShoppingBag className="h-5 w-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-accent text-accent-foreground text-[10px] font-body font-bold w-4.5 h-4.5 flex items-center justify-center rounded-full">
+                  {totalItems}
+                </span>
+              )}
             </button>
             <Link to="/admin" className="p-2 hover:text-accent transition-colors">
               <User className="h-5 w-5" />
