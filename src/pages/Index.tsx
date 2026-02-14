@@ -6,6 +6,7 @@ import PromoBanner from "@/components/store/PromoBanner";
 import ProductGrid from "@/components/store/ProductGrid";
 import Footer from "@/components/store/Footer";
 import CartDrawer from "@/components/store/CartDrawer";
+import BackToTop from "@/components/store/BackToTop";
 
 const Index = () => {
   return (
@@ -22,6 +23,7 @@ const Index = () => {
         <ProductGrid />
       </div>
       <Footer />
+      <BackToTop />
     </div>
   );
 };
