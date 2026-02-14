@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, LogOut, Edit, X, Upload, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, LogOut, Edit, X, Upload, ArrowLeft, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
@@ -17,6 +17,8 @@ interface AdminDashboardProps {
 const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Tables<"products"> | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -98,6 +100,34 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
           />
         )}
 
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-secondary border-none rounded-none py-5"
+            />
+          </div>
+          <div className="flex gap-1">
+            {["all", "women", "men", "kids"].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCategory(cat)}
+                className={`px-4 py-2.5 text-xs tracking-[0.15em] uppercase font-body font-medium transition-all ${
+                  filterCategory === cat
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-muted"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Products table */}
         {isLoading ? (
           <div className="space-y-4">
@@ -105,9 +135,36 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
               <div key={i} className="h-20 bg-secondary animate-pulse rounded" />
             ))}
           </div>
-        ) : products && products.length > 0 ? (
-          <div className="space-y-3">
-            {products.map((product) => (
+        ) : (() => {
+          const filtered = (products || []).filter((p) => {
+            const matchesCategory = filterCategory === "all" || p.category === filterCategory;
+            const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+          });
+
+          // Group by category
+          const grouped = filtered.reduce<Record<string, typeof filtered>>((acc, p) => {
+            const key = p.category;
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(p);
+            return acc;
+          }, {});
+
+          const categoryOrder = ["women", "men", "kids"];
+          const sortedKeys = categoryOrder.filter((k) => grouped[k]);
+
+          return sortedKeys.length > 0 ? (
+            <div className="space-y-8">
+              {sortedKeys.map((cat) => (
+                <div key={cat}>
+                  <h3 className="font-display text-lg capitalize mb-3 flex items-center gap-2">
+                    {cat}
+                    <span className="text-xs font-body text-muted-foreground tracking-wider">
+                      ({grouped[cat].length})
+                    </span>
+                  </h3>
+                  <div className="space-y-2">
+                    {grouped[cat].map((product) => (
               <div
                 key={product.id}
                 className="flex items-center gap-4 p-4 bg-card border border-border hover:border-accent/30 transition-colors"
@@ -162,19 +219,27 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <p className="font-display text-2xl text-muted-foreground mb-4">No products yet</p>
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              className="bg-accent text-accent-foreground rounded-none tracking-[0.1em] uppercase hover:bg-gold-dark"
-            >
-              Add Your First Product
-            </Button>
-          </div>
-        )}
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <p className="font-display text-2xl text-muted-foreground mb-4">
+                {searchQuery || filterCategory !== "all" ? "No matching products" : "No products yet"}
+              </p>
+              {!searchQuery && filterCategory === "all" && (
+                <Button
+                  onClick={() => setIsFormOpen(true)}
+                  className="bg-accent text-accent-foreground rounded-none tracking-[0.1em] uppercase hover:bg-gold-dark"
+                >
+                  Add Your First Product
+                </Button>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
