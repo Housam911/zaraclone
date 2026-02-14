@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, LogOut, Edit, X, Upload, ArrowLeft, Search } from "lucide-react";
+import { Plus, Trash2, LogOut, Edit, X, Upload, ArrowLeft, Search, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import AdminSettings from "./AdminSettings";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -19,6 +21,7 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [editingProduct, setEditingProduct] = useState<Tables<"products"> | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"products" | "settings">("products");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -66,16 +69,41 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             <h1 className="font-display text-xl">Admin Panel</h1>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => {
-                setEditingProduct(null);
-                setIsFormOpen(true);
-              }}
-              className="bg-accent text-accent-foreground rounded-none text-xs tracking-[0.1em] uppercase hover:bg-gold-dark"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
+            <div className="flex gap-1 mr-2">
+              <button
+                onClick={() => setActiveTab("products")}
+                className={`px-4 py-2 text-xs tracking-[0.1em] uppercase font-body font-medium transition-all ${
+                  activeTab === "products"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-muted"
+                }`}
+              >
+                Products
+              </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`px-4 py-2 text-xs tracking-[0.1em] uppercase font-body font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === "settings"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-muted"
+                }`}
+              >
+                <Settings className="h-3.5 w-3.5" />
+                Settings
+              </button>
+            </div>
+            {activeTab === "products" && (
+              <Button
+                onClick={() => {
+                  setEditingProduct(null);
+                  setIsFormOpen(true);
+                }}
+                className="bg-accent text-accent-foreground rounded-none text-xs tracking-[0.1em] uppercase hover:bg-gold-dark"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
+            )}
             <Button
               onClick={handleLogout}
               variant="outline"
@@ -89,6 +117,10 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
       </header>
 
       <div className="container mx-auto px-4 lg:px-8 py-8">
+        {activeTab === "settings" ? (
+          <AdminSettings />
+        ) : (
+        <>
         {/* Product form modal */}
         {isFormOpen && (
           <ProductForm
@@ -240,6 +272,8 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             </div>
           );
         })()}
+        </>
+        )}
       </div>
     </div>
   );
@@ -259,7 +293,7 @@ const ProductForm = ({
   const [originalPrice, setOriginalPrice] = useState(product?.original_price?.toString() || "");
   const [category, setCategory] = useState<string>(product?.category || "women");
   const [subcategory, setSubcategory] = useState(product?.subcategory || "");
-  const [sizesInput, setSizesInput] = useState(product?.sizes?.join(", ") || "");
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(product?.sizes || []);
   const [colorsInput, setColorsInput] = useState(product?.colors?.join(", ") || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(product?.image_url || "");
@@ -270,6 +304,30 @@ const ProductForm = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: subcategories } = useQuery({
+    queryKey: ["subcategories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("subcategories").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: availableSizes } = useQuery({
+    queryKey: ["available-sizes"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("available_sizes").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const toggleSize = (sizeName: string) => {
+    setSelectedSizes((prev) =>
+      prev.includes(sizeName) ? prev.filter((s) => s !== sizeName) : [...prev, sizeName]
+    );
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -333,10 +391,6 @@ const ProductForm = ({
         ? [imageUrl, ...uploadedAdditional.filter((u) => u !== imageUrl)]
         : uploadedAdditional;
 
-      const sizes = sizesInput
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
       const colors = colorsInput
         .split(",")
         .map((c) => c.trim())
@@ -351,7 +405,7 @@ const ProductForm = ({
         subcategory: subcategory || null,
         image_url: imageUrl || null,
         images: allImages.length > 0 ? allImages : null,
-        sizes: sizes.length > 0 ? sizes : null,
+        sizes: selectedSizes.length > 0 ? selectedSizes : null,
         colors: colors.length > 0 ? colors : null,
       };
 
@@ -500,20 +554,47 @@ const ProductForm = ({
                 <SelectItem value="kids">Kids</SelectItem>
               </SelectContent>
             </Select>
-            <Input
-              placeholder="Subcategory (e.g. tops)"
-              value={subcategory}
-              onChange={(e) => setSubcategory(e.target.value)}
-              className="bg-secondary border-none py-5 rounded-none"
-            />
+            <Select value={subcategory} onValueChange={setSubcategory}>
+              <SelectTrigger className="bg-secondary border-none rounded-none py-5">
+                <SelectValue placeholder="Subcategory" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {subcategories?.map((sub) => (
+                  <SelectItem key={sub.id} value={sub.name}>
+                    {sub.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <Input
-            placeholder="Sizes (comma separated, e.g. S, M, L, XL)"
-            value={sizesInput}
-            onChange={(e) => setSizesInput(e.target.value)}
-            className="bg-secondary border-none py-5 rounded-none"
-          />
+          {/* Sizes checkboxes */}
+          <div>
+            <label className="block text-xs tracking-[0.1em] uppercase font-body font-medium mb-2">
+              Sizes
+            </label>
+            {availableSizes && availableSizes.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {availableSizes.map((size) => (
+                  <label
+                    key={size.id}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selectedSizes.includes(size.name)}
+                      onCheckedChange={() => toggleSize(size.name)}
+                    />
+                    <span className="text-sm font-body uppercase tracking-wider">{size.name}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground font-body">
+                No sizes configured. Add them in Settings.
+              </p>
+            )}
+          </div>
 
           <Input
             placeholder="Colors (comma separated, e.g. Black, White, Red)"
