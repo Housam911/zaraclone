@@ -15,12 +15,12 @@ const CartDrawer = () => {
 
   const whatsappOrder = () => {
     const lines = items.map(
-      (i) => `• ${i.product.name} (x${i.quantity}) — $${(i.product.price * i.quantity).toFixed(2)}`
+      (i) => `• ${i.product.name} (x${i.quantity}) - $${(i.product.price * i.quantity).toFixed(2)}`
     );
     const message = encodeURIComponent(
-      `Hello, I'd like to order:\n${lines.join("\n")}\n\nTotal: $${totalPrice.toFixed(2)}`
+      `Hi, I'd like to order:\n${lines.join("\n")}\n\nTotal: $${totalPrice.toFixed(2)}`
     );
-    window.open(`https://wa.me/96179357527?text=${message}`, "_blank");
+    window.location.href = `https://wa.me/96179357527?text=${message}`;
   };
 
   return (
