@@ -4,7 +4,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div>
-            <h3 className="font-display text-2xl tracking-[0.15em] uppercase mb-4">Élégance</h3>
+            <h3 className="font-display text-2xl tracking-[0.15em] uppercase mb-4">MY SHOP</h3>
             <p className="font-body text-sm text-primary-foreground/70 leading-relaxed">
               Curated fashion for those who appreciate timeless style and modern sophistication.
             </p>
@@ -35,7 +35,7 @@ const Footer = () => {
         </div>
         <div className="mt-12 pt-8 border-t border-primary-foreground/10 text-center">
           <p className="font-body text-xs text-primary-foreground/40 tracking-wider">
-            © 2026 Élégance. All rights reserved.
+            © 2026 MY SHOP. All rights reserved.
           </p>
         </div>
       </div>
