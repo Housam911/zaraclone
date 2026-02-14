@@ -4,15 +4,17 @@ import type { Tables } from "@/integrations/supabase/types";
 export interface CartItem {
   product: Tables<"products">;
   quantity: number;
+  selectedSize?: string | null;
+  selectedColor?: string | null;
 }
 
 interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  addItem: (product: Tables<"products">) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: Tables<"products">, selectedSize?: string | null, selectedColor?: string | null) => void;
+  removeItem: (productId: string, selectedSize?: string | null, selectedColor?: string | null) => void;
+  updateQuantity: (productId: string, quantity: number, selectedSize?: string | null, selectedColor?: string | null) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -24,29 +26,34 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  const addItem = useCallback((product: Tables<"products">) => {
+  const addItem = useCallback((product: Tables<"products">, selectedSize?: string | null, selectedColor?: string | null) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
+      const cartKey = `${product.id}-${selectedSize || ''}-${selectedColor || ''}`;
+      const existing = prev.find((i) => `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` === cartKey);
       if (existing) {
         return prev.map((i) =>
-          i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+          `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` === cartKey
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: 1, selectedSize, selectedColor }];
     });
     setIsOpen(true);
   }, []);
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.product.id !== productId));
+  const removeItem = useCallback((productId: string, selectedSize?: string | null, selectedColor?: string | null) => {
+    const cartKey = `${productId}-${selectedSize || ''}-${selectedColor || ''}`;
+    setItems((prev) => prev.filter((i) => `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` !== cartKey));
   }, []);
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, selectedSize?: string | null, selectedColor?: string | null) => {
+    const cartKey = `${productId}-${selectedSize || ''}-${selectedColor || ''}`;
     if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.product.id !== productId));
+      setItems((prev) => prev.filter((i) => `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` !== cartKey));
     } else {
       setItems((prev) =>
-        prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i))
+        prev.map((i) => (`${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` === cartKey ? { ...i, quantity } : i))
       );
     }
   }, []);

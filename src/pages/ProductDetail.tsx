@@ -77,7 +77,7 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
-      addItem(product);
+      addItem(product, selectedSize, selectedColor);
     }
   };
 
