@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,8 @@ const SubcategoryManager = () => {
 
 const SizeManager = () => {
   const [newName, setNewName] = useState("");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -167,6 +169,36 @@ const SizeManager = () => {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (reordered: typeof sizes) => {
+      if (!reordered) return;
+      const updates = reordered.map((s, i) =>
+        supabase.from("available_sizes").update({ sort_order: i }).eq("id", s.id)
+      );
+      const results = await Promise.all(updates);
+      const err = results.find((r) => r.error);
+      if (err?.error) throw err.error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["available-sizes"] });
+      toast({ title: "Order updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleDragEnd = useCallback(() => {
+    if (dragIndex !== null && overIndex !== null && dragIndex !== overIndex && sizes) {
+      const reordered = [...sizes];
+      const [moved] = reordered.splice(dragIndex, 1);
+      reordered.splice(overIndex, 0, moved);
+      reorderMutation.mutate(reordered);
+    }
+    setDragIndex(null);
+    setOverIndex(null);
+  }, [dragIndex, overIndex, sizes, reorderMutation]);
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (newName.trim()) addMutation.mutate(newName.trim());
@@ -199,11 +231,20 @@ const SizeManager = () => {
         </div>
       ) : sizes && sizes.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {sizes.map((size) => (
+          {sizes.map((size, index) => (
             <div
               key={size.id}
-              className="flex items-center gap-2 px-3 py-2 bg-card border border-border hover:border-accent/30 transition-colors"
+              draggable
+              onDragStart={() => setDragIndex(index)}
+              onDragOver={(e) => { e.preventDefault(); setOverIndex(index); }}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-2 px-3 py-2 bg-card border transition-colors cursor-grab active:cursor-grabbing ${
+                overIndex === index && dragIndex !== null && dragIndex !== index
+                  ? "border-accent"
+                  : "border-border hover:border-accent/30"
+              } ${dragIndex === index ? "opacity-50" : ""}`}
             >
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="font-body text-sm uppercase tracking-wider">{size.name}</span>
               <button
                 onClick={() => deleteMutation.mutate(size.id)}
@@ -223,6 +264,8 @@ const SizeManager = () => {
 
 const ColorManager = () => {
   const [newName, setNewName] = useState("");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -268,6 +311,36 @@ const ColorManager = () => {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (reordered: typeof colors) => {
+      if (!reordered) return;
+      const updates = reordered.map((c, i) =>
+        supabase.from("available_colors").update({ sort_order: i }).eq("id", c.id)
+      );
+      const results = await Promise.all(updates);
+      const err = results.find((r) => r.error);
+      if (err?.error) throw err.error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["available-colors"] });
+      toast({ title: "Order updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleDragEnd = useCallback(() => {
+    if (dragIndex !== null && overIndex !== null && dragIndex !== overIndex && colors) {
+      const reordered = [...colors];
+      const [moved] = reordered.splice(dragIndex, 1);
+      reordered.splice(overIndex, 0, moved);
+      reorderMutation.mutate(reordered);
+    }
+    setDragIndex(null);
+    setOverIndex(null);
+  }, [dragIndex, overIndex, colors, reorderMutation]);
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (newName.trim()) addMutation.mutate(newName.trim());
@@ -300,11 +373,20 @@ const ColorManager = () => {
         </div>
       ) : colors && colors.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {colors.map((color) => (
+          {colors.map((color, index) => (
             <div
               key={color.id}
-              className="flex items-center gap-2 px-3 py-2 bg-card border border-border hover:border-accent/30 transition-colors"
+              draggable
+              onDragStart={() => setDragIndex(index)}
+              onDragOver={(e) => { e.preventDefault(); setOverIndex(index); }}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-2 px-3 py-2 bg-card border transition-colors cursor-grab active:cursor-grabbing ${
+                overIndex === index && dragIndex !== null && dragIndex !== index
+                  ? "border-accent"
+                  : "border-border hover:border-accent/30"
+              } ${dragIndex === index ? "opacity-50" : ""}`}
             >
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
               <span
                 className="w-4 h-4 rounded-full border border-border"
                 style={{ backgroundColor: color.name.toLowerCase() }}
