@@ -1,16 +1,25 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import categoryWomen from "@/assets/category-women.jpg";
 import categoryMen from "@/assets/category-men.jpg";
 import categoryKids from "@/assets/category-kids.jpg";
 import ScrollReveal from "./ScrollReveal";
 
 const categories = [
-  { label: "Women", image: categoryWomen, href: "/?category=women" },
-  { label: "Men", image: categoryMen, href: "/?category=men" },
-  { label: "Kids", image: categoryKids, href: "/?category=kids" },
+  { label: "Women", image: categoryWomen, category: "women" },
+  { label: "Men", image: categoryMen, category: "men" },
+  { label: "Kids", image: categoryKids, category: "kids" },
 ];
 
 const CategoryShowcase = () => {
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (category: string) => {
+    navigate(`/?category=${category}`);
+    setTimeout(() => {
+      document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
   return (
     <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-24">
       <ScrollReveal>
@@ -23,9 +32,9 @@ const CategoryShowcase = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
         {categories.map((cat, index) => (
           <ScrollReveal key={cat.label} delay={index * 0.15}>
-            <Link
-              to={cat.href}
-              className="group relative aspect-[3/4] overflow-hidden block"
+            <button
+              onClick={() => handleCategoryClick(cat.category)}
+              className="group relative aspect-[3/4] overflow-hidden block w-full text-left"
             >
               <img
                 src={cat.image}
@@ -46,7 +55,7 @@ const CategoryShowcase = () => {
                   </svg>
                 </div>
               </div>
-            </Link>
+            </button>
           </ScrollReveal>
         ))}
       </div>

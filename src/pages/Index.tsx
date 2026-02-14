@@ -18,7 +18,9 @@ const Index = () => {
         <CategoryShowcase />
       </div>
       <PromoBanner />
-      <ProductGrid />
+      <div id="products">
+        <ProductGrid />
+      </div>
       <Footer />
     </div>
   );
