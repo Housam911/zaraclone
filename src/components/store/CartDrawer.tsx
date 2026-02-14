@@ -15,7 +15,7 @@ const CartDrawer = () => {
 
   const whatsappOrder = () => {
     const lines = items.map(
-      (i) => `${i.product.name} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${i.product.price.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`
+      (i) => `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ''}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ''} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${i.product.price.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`
     );
     const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${totalPrice.toFixed(2)}` : ''}`;
     const url = `https://api.whatsapp.com/send/?phone=96179357527&text=${encodeURIComponent(text)}&type=phone_number&app_absent=0`;
@@ -64,6 +64,13 @@ const CartDrawer = () => {
                         {item.product.category}
                       </p>
                       <h4 className="font-display text-sm capitalize truncate">{item.product.name}</h4>
+                      {(item.selectedSize || item.selectedColor) && (
+                        <p className="text-xs text-muted-foreground font-body">
+                          {item.selectedSize ? `Size: ${item.selectedSize}` : ''}
+                          {item.selectedSize && item.selectedColor ? ' · ' : ''}
+                          {item.selectedColor ? `Color: ${item.selectedColor}` : ''}
+                        </p>
+                      )}
                       <p className="font-body font-semibold text-sm mt-0.5">
                         ${item.product.price.toFixed(2)}
                       </p>
@@ -72,21 +79,21 @@ const CartDrawer = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center border border-border">
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedSize, item.selectedColor)}
                           className="p-1.5 hover:bg-secondary transition-colors"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
                         <span className="px-3 text-xs font-body font-medium">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedSize, item.selectedColor)}
                           className="p-1.5 hover:bg-secondary transition-colors"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
                       <button
-                        onClick={() => removeItem(item.product.id)}
+                        onClick={() => removeItem(item.product.id, item.selectedSize, item.selectedColor)}
                         className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
