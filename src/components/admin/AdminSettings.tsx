@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import SliderManager from "./SliderManager";
+import StoreSettingsManager from "./StoreSettingsManager";
 
 const AdminSettings = () => {
   return (
     <div className="space-y-10">
+      <StoreSettingsManager />
       <SliderManager />
       <SubcategoryManager />
       <SizeManager />
