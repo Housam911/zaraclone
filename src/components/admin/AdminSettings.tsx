@@ -97,21 +97,19 @@ const SubcategoryManager = () => {
           ))}
         </div>
       ) : subcategories && subcategories.length > 0 ? (
-        <div className="space-y-1">
+        <div className="flex flex-wrap gap-2">
           {subcategories.map((sub) => (
             <div
               key={sub.id}
-              className="flex items-center justify-between p-3 bg-card border border-border hover:border-accent/30 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-card border border-border hover:border-accent/30 transition-colors"
             >
               <span className="font-body text-sm capitalize">{sub.name}</span>
-              <Button
-                size="icon"
-                variant="ghost"
+              <button
                 onClick={() => deleteMutation.mutate(sub.id)}
-                className="rounded-none text-destructive hover:text-destructive h-8 w-8"
+                className="text-destructive hover:text-destructive/80 transition-colors"
               >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
           ))}
         </div>
