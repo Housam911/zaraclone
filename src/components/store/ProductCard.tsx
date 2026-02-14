@@ -1,18 +1,16 @@
-import { Heart } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
   product: Tables<"products">;
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const { addItem } = useCart();
   const discount = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : null;
-
-  const whatsappMessage = encodeURIComponent(
-    `Hello, I want to order: ${product.name} | ${product.category}${product.subcategory ? ` / ${product.subcategory}` : ''} | Price: $${product.price}`
-  );
 
   return (
     <div className="group cursor-pointer animate-fade-in">
@@ -43,14 +41,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         {/* Quick actions */}
         <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-          <a
-            href={`https://wa.me/96179357527?text=${whatsappMessage}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full bg-primary text-primary-foreground text-center py-3 text-xs tracking-[0.2em] uppercase font-body font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+          <button
+            onClick={() => addItem(product)}
+            className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground text-center py-3 text-xs tracking-[0.2em] uppercase font-body font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
           >
-            Order on WhatsApp
-          </a>
+            <ShoppingBag className="h-4 w-4" />
+            Add to Bag
+          </button>
         </div>
       </div>
 
