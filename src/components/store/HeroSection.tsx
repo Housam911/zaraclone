@@ -22,9 +22,9 @@ const HeroSection = () => {
           </div>
           
           <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl text-primary-foreground leading-[0.95] animate-fade-in" style={{ animationDelay: "0.15s" }}>
-            Timeless
+            MY
             <br />
-            <span className="italic font-normal">Elegance</span>
+            <span className="italic font-normal">SHOP</span>
           </h1>
           
           <p className="text-primary-foreground/70 font-body text-base sm:text-lg max-w-md leading-relaxed animate-fade-in" style={{ animationDelay: "0.3s" }}>

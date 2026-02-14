@@ -28,7 +28,7 @@ const Navbar = () => {
 
           {/* Logo */}
           <Link to="/" className="font-display text-2xl tracking-[0.15em] uppercase font-semibold">
-            Élégance
+            MY SHOP
           </Link>
 
           {/* Desktop nav */}
