@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit, X, Upload } from "lucide-react";
+import { Plus, Trash2, Edit, X, Upload, GripVertical } from "lucide-react";
 
 interface HeroSlide {
   id: string;
@@ -20,6 +20,8 @@ interface HeroSlide {
 const SliderManager = () => {
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -48,6 +50,35 @@ const SliderManager = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (reordered: HeroSlide[]) => {
+      const updates = reordered.map((s, i) =>
+        supabase.from("hero_slides").update({ sort_order: i }).eq("id", s.id)
+      );
+      const results = await Promise.all(updates);
+      const err = results.find((r) => r.error);
+      if (err?.error) throw err.error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hero-slides"] });
+      toast({ title: "Order updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleDragEnd = useCallback(() => {
+    if (dragIndex !== null && overIndex !== null && dragIndex !== overIndex && slides) {
+      const reordered = [...slides];
+      const [moved] = reordered.splice(dragIndex, 1);
+      reordered.splice(overIndex, 0, moved);
+      reorderMutation.mutate(reordered);
+    }
+    setDragIndex(null);
+    setOverIndex(null);
+  }, [dragIndex, overIndex, slides, reorderMutation]);
 
   return (
     <div>
@@ -82,11 +113,20 @@ const SliderManager = () => {
         </div>
       ) : slides && slides.length > 0 ? (
         <div className="space-y-2">
-          {slides.map((slide) => (
+          {slides.map((slide, index) => (
             <div
               key={slide.id}
-              className="flex items-center gap-4 p-3 bg-card border border-border hover:border-accent/30 transition-colors"
+              draggable
+              onDragStart={() => setDragIndex(index)}
+              onDragOver={(e) => { e.preventDefault(); setOverIndex(index); }}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-4 p-3 bg-card border transition-colors cursor-grab active:cursor-grabbing ${
+                overIndex === index && dragIndex !== null && dragIndex !== index
+                  ? "border-accent"
+                  : "border-border hover:border-accent/30"
+              } ${dragIndex === index ? "opacity-50" : ""}`}
             >
+              <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               <div className="w-24 h-16 bg-secondary flex-shrink-0 overflow-hidden">
                 {slide.image_url ? (
                   <img src={slide.image_url} alt={slide.subtitle} className="w-full h-full object-cover" />
