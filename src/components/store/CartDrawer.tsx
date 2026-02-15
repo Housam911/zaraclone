@@ -1,6 +1,8 @@
 import { Minus, Plus, Trash2, ShoppingBag, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useGlobalDiscount, getEffectivePricing } from "@/hooks/use-global-discount";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -15,6 +17,22 @@ const CartDrawer = () => {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
   const { data: globalDiscount = 0 } = useGlobalDiscount();
 
+  const { data: supportPhone } = useQuery({
+    queryKey: ["support-phone"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_settings")
+        .select("value")
+        .eq("key", "support_phone")
+        .maybeSingle();
+      if (error || !data) return null;
+      return data.value;
+    },
+    staleTime: 60_000,
+  });
+
+  const phoneDigits = (supportPhone || "96171786787").replace(/[^0-9]/g, "");
+
   const effectiveTotal = items.reduce((sum, i) => {
     const { displayPrice } = getEffectivePricing(i.product, globalDiscount);
     return sum + displayPrice * i.quantity;
@@ -26,7 +44,7 @@ const CartDrawer = () => {
       return `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ''}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ''} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${displayPrice.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`;
     });
     const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${effectiveTotal.toFixed(2)}` : ''}`;
-    const url = `https://web.whatsapp.com/send?phone=96171786787&text=${encodeURIComponent(text)}`;
+    const url = `https://web.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 

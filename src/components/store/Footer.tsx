@@ -1,10 +1,32 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 const Footer = () => {
+  const { data: settings } = useQuery({
+    queryKey: ["footer-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_settings")
+        .select("key, value")
+        .in("key", ["store_name", "support_phone", "support_email"]);
+      if (error || !data) return {};
+      const map: Record<string, string> = {};
+      data.forEach((s) => (map[s.key] = s.value));
+      return map;
+    },
+    staleTime: 60_000,
+  });
+
+  const phone = settings?.support_phone || "+961 79 357 527";
+  const phoneDigits = phone.replace(/[^0-9]/g, "");
+  const storeName = settings?.store_name || "MY SHOP";
+
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div>
-            <h3 className="font-display text-2xl tracking-[0.15em] uppercase mb-4">MY SHOP</h3>
+            <h3 className="font-display text-2xl tracking-[0.15em] uppercase mb-4">{storeName}</h3>
             <p className="font-body text-sm text-primary-foreground/70 leading-relaxed">
               Curated fashion for those who appreciate timeless style and modern sophistication.
             </p>
@@ -22,12 +44,12 @@ const Footer = () => {
             <ul className="space-y-2 font-body text-sm text-primary-foreground/70">
               <li>
                 <a
-                  href="https://web.whatsapp.com/send?phone=96171786787"
+                  href={`https://web.whatsapp.com/send?phone=${phoneDigits}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gold transition-colors"
                 >
-                  WhatsApp: +961 79 357 527
+                  WhatsApp: {phone}
                 </a>
               </li>
             </ul>
@@ -35,7 +57,7 @@ const Footer = () => {
         </div>
         <div className="mt-12 pt-8 border-t border-primary-foreground/10 text-center">
           <p className="font-body text-xs text-primary-foreground/40 tracking-wider">
-            © 2026 MY SHOP. All rights reserved.
+            © 2026 {storeName}. All rights reserved.
           </p>
         </div>
       </div>
