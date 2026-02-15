@@ -15,13 +15,34 @@ const categories = [
 const ProductGrid = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = searchParams.get("category") || "all";
+  const activeSubcategory = searchParams.get("subcategory") || "all";
+
+  // Fetch distinct subcategories for the selected category
+  const { data: subcategories } = useQuery({
+    queryKey: ["product-subcategories", activeCategory],
+    queryFn: async () => {
+      if (activeCategory === "all") return [];
+      const { data, error } = await supabase
+        .from("products")
+        .select("subcategory")
+        .eq("category", activeCategory as Tables<"products">["category"])
+        .not("subcategory", "is", null);
+      if (error) throw error;
+      const unique = [...new Set(data.map((p) => p.subcategory).filter(Boolean))] as string[];
+      return unique.sort();
+    },
+    enabled: activeCategory !== "all",
+  });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", activeCategory],
+    queryKey: ["products", activeCategory, activeSubcategory],
     queryFn: async () => {
       let query = supabase.from("products").select("*").order("created_at", { ascending: false });
       if (activeCategory !== "all") {
         query = query.eq("category", activeCategory as Tables<"products">["category"]);
+      }
+      if (activeSubcategory !== "all") {
+        query = query.eq("subcategory", activeSubcategory);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -49,6 +70,7 @@ const ProductGrid = () => {
                 } else {
                   searchParams.set("category", cat.value);
                 }
+                searchParams.delete("subcategory");
                 setSearchParams(searchParams);
               }}
               className={`px-6 py-2.5 text-xs tracking-[0.2em] uppercase font-body font-medium transition-all ${
@@ -62,6 +84,42 @@ const ProductGrid = () => {
           ))}
         </div>
       </ScrollReveal>
+
+      {subcategories && subcategories.length > 0 && (
+        <ScrollReveal>
+          <div className="flex justify-center flex-wrap gap-1 mb-12 -mt-6">
+            <button
+              onClick={() => {
+                searchParams.delete("subcategory");
+                setSearchParams(searchParams);
+              }}
+              className={`px-5 py-2 text-[11px] tracking-[0.15em] uppercase font-body font-medium transition-all rounded-full ${
+                activeSubcategory === "all"
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-muted"
+              }`}
+            >
+              All
+            </button>
+            {subcategories.map((sub) => (
+              <button
+                key={sub}
+                onClick={() => {
+                  searchParams.set("subcategory", sub);
+                  setSearchParams(searchParams);
+                }}
+                className={`px-5 py-2 text-[11px] tracking-[0.15em] uppercase font-body font-medium transition-all rounded-full ${
+                  activeSubcategory === sub
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-muted"
+                }`}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        </ScrollReveal>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
