@@ -13,6 +13,11 @@ const statusStyles: Record<OrderStatus, string> = {
   rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
+const isNewOrder = (createdAt: string) => {
+  const diffMs = Date.now() - new Date(createdAt).getTime();
+  return diffMs < 5 * 60 * 1000; // less than 5 minutes old
+};
+
 const OrdersManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -127,8 +132,21 @@ const OrdersManager = () => {
             return (
               <div
                 key={order.id}
-                className="bg-card border border-border hover:border-accent/30 transition-colors"
+                className={`bg-card border transition-colors ${
+                  isNewOrder(order.created_at)
+                    ? "border-primary/50 shadow-[0_0_15px_-3px_hsl(var(--primary)/0.3)] animate-pulse-subtle ring-1 ring-primary/20"
+                    : "border-border hover:border-accent/30"
+                }`}
               >
+                {isNewOrder(order.created_at) && (
+                  <div className="bg-primary/10 px-4 py-1 flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    </span>
+                    <span className="text-[10px] tracking-widest uppercase font-body font-medium text-primary">New Order</span>
+                  </div>
+                )}
                 {/* Order header */}
                 <div
                   className="flex items-center gap-4 p-4 cursor-pointer"
