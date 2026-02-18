@@ -115,7 +115,8 @@ const CartDrawer = () => {
                         <span className="px-3 text-xs font-body font-medium">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedSize, item.selectedColor)}
-                          className="p-1.5 hover:bg-secondary transition-colors"
+                          className="p-1.5 hover:bg-secondary transition-colors disabled:opacity-30"
+                          disabled={item.quantity >= ((item.product as any).stock_quantity ?? Infinity)}
                         >
                           <Plus className="h-3 w-3" />
                         </button>
