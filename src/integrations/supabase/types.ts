@@ -156,6 +156,7 @@ export type Database = {
           customer_phone: string
           id: string
           order_method: string
+          payment_method: string
           status: Database["public"]["Enums"]["order_status"]
           total: number
           updated_at: string
@@ -169,6 +170,7 @@ export type Database = {
           customer_phone: string
           id?: string
           order_method?: string
+          payment_method?: string
           status?: Database["public"]["Enums"]["order_status"]
           total?: number
           updated_at?: string
@@ -182,6 +184,7 @@ export type Database = {
           customer_phone?: string
           id?: string
           order_method?: string
+          payment_method?: string
           status?: Database["public"]["Enums"]["order_status"]
           total?: number
           updated_at?: string

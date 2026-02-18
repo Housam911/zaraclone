@@ -153,6 +153,8 @@ const OrdersManager = () => {
                       {order.customer_phone}
                       {order.customer_email ? ` · ${order.customer_email}` : ""}
                       {" · "}
+                      {(order as any).payment_method === "wish" ? "Wish Money" : "COD"}
+                      {" · "}
                       {new Date(order.created_at).toLocaleDateString("en-US", {
                         month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
                       })}
