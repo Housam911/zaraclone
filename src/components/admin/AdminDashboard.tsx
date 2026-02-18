@@ -226,13 +226,21 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
                   {product.original_price && (
                     <p className="text-xs text-muted-foreground line-through">${product.original_price.toFixed(2)}</p>
                   )}
-                  <span className={`text-[10px] tracking-wider uppercase font-body font-medium px-2 py-0.5 ${
-                    product.in_stock
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                  }`}>
-                    {product.in_stock ? `Qty: ${(product as any).stock_quantity ?? '?'}` : "Out of Stock"}
-                  </span>
+                  {(() => {
+                    const qty = (product as any).stock_quantity ?? 0;
+                    const isLow = product.in_stock && qty > 0 && qty <= 5;
+                    return (
+                      <span className={`text-[10px] tracking-wider uppercase font-body font-medium px-2 py-0.5 ${
+                        !product.in_stock
+                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          : isLow
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                            : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      }`}>
+                        {!product.in_stock ? "Out of Stock" : isLow ? `Low: ${qty}` : `Qty: ${qty}`}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {/* Actions */}
