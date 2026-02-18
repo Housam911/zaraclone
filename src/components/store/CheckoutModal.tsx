@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, MessageCircle, Mail, Loader2 } from "lucide-react";
+import { X, MessageCircle, Mail, Loader2, Banknote, Smartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ const CheckoutModal = ({ open, onClose }: CheckoutModalProps) => {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "wish">("cod");
 
   const { data: supportPhone } = useQuery({
     queryKey: ["support-phone"],
@@ -60,6 +61,7 @@ const CheckoutModal = ({ open, onClose }: CheckoutModalProps) => {
           customer_address: address.trim().slice(0, 500) || null,
           customer_note: note.trim().slice(0, 1000) || null,
           order_method: method,
+          payment_method: paymentMethod,
           total: effectiveTotal,
         })
         .select("id")
@@ -118,7 +120,8 @@ const CheckoutModal = ({ open, onClose }: CheckoutModalProps) => {
         const { displayPrice } = getEffectivePricing(i.product, globalDiscount);
         return `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ""}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ""} | $${displayPrice.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ""}`;
       });
-      const text = `Hello, I'd like to place an order:\n\nName: ${name}\nPhone: ${phone}${email ? `\nEmail: ${email}` : ""}${address ? `\nAddress: ${address}` : ""}${note ? `\nNote: ${note}` : ""}\n\nItems:\n${lines.join("\n")}\n\nTotal: $${effectiveTotal.toFixed(2)}\n\nOrder ID: ${orderId}`;
+      const paymentLabel = paymentMethod === "cod" ? "Cash on Delivery" : "Wish Money Transfer";
+      const text = `Hello, I'd like to place an order:\n\nName: ${name}\nPhone: ${phone}${email ? `\nEmail: ${email}` : ""}${address ? `\nAddress: ${address}` : ""}${note ? `\nNote: ${note}` : ""}\nPayment: ${paymentLabel}\n\nItems:\n${lines.join("\n")}\n\nTotal: $${effectiveTotal.toFixed(2)}\n\nOrder ID: ${orderId}`;
       const url = `https://api.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(text)}`;
       window.open(url, "_blank");
 
@@ -211,6 +214,45 @@ const CheckoutModal = ({ open, onClose }: CheckoutModalProps) => {
               rows={2}
               className="bg-secondary border-none rounded-none resize-none"
             />
+          </div>
+
+          {/* Payment Method */}
+          <div>
+            <label className="block text-xs tracking-[0.1em] uppercase font-body font-medium mb-2">
+              Payment Method <span className="text-destructive">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("cod")}
+                className={`flex items-center gap-2 p-3 border text-left transition-colors ${
+                  paymentMethod === "cod"
+                    ? "border-foreground bg-foreground/5"
+                    : "border-border hover:border-muted-foreground"
+                }`}
+              >
+                <Banknote className="h-5 w-5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-body font-medium">Cash on Delivery</p>
+                  <p className="text-[10px] text-muted-foreground font-body">Pay when you receive</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("wish")}
+                className={`flex items-center gap-2 p-3 border text-left transition-colors ${
+                  paymentMethod === "wish"
+                    ? "border-foreground bg-foreground/5"
+                    : "border-border hover:border-muted-foreground"
+                }`}
+              >
+                <Smartphone className="h-5 w-5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-body font-medium">Wish Money</p>
+                  <p className="text-[10px] text-muted-foreground font-body">Mobile transfer</p>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* Order summary */}
