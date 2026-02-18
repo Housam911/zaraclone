@@ -1,8 +1,7 @@
+import { useState } from "react";
 import { Minus, Plus, Trash2, ShoppingBag, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useGlobalDiscount, getEffectivePricing } from "@/hooks/use-global-discount";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -11,44 +10,20 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import CheckoutModal from "./CheckoutModal";
 
 const CartDrawer = () => {
-  const { items, isOpen, setIsOpen, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
+  const { items, isOpen, setIsOpen, removeItem, updateQuantity, clearCart, totalItems } = useCart();
   const { data: globalDiscount = 0 } = useGlobalDiscount();
-
-  const { data: supportPhone } = useQuery({
-    queryKey: ["support-phone"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("store_settings")
-        .select("value")
-        .eq("key", "support_phone")
-        .maybeSingle();
-      if (error || !data) return null;
-      return data.value;
-    },
-    staleTime: 60_000,
-  });
-
-  const phoneDigits = (supportPhone || "96171786787").replace(/[^0-9]/g, "");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const effectiveTotal = items.reduce((sum, i) => {
     const { displayPrice } = getEffectivePricing(i.product, globalDiscount);
     return sum + displayPrice * i.quantity;
   }, 0);
 
-  const whatsappOrder = () => {
-    const lines = items.map((i) => {
-      const { displayPrice } = getEffectivePricing(i.product, globalDiscount);
-      return `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ''}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ''} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${displayPrice.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`;
-    });
-    const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${effectiveTotal.toFixed(2)}` : ''}`;
-    const url = `https://api.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-  };
-
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="flex flex-col w-full sm:max-w-md">
         <SheetHeader>
@@ -70,27 +45,17 @@ const CartDrawer = () => {
                 const { displayPrice } = getEffectivePricing(item.product, globalDiscount);
                 return (
                 <div key={`${item.product.id}-${item.selectedSize || ''}-${item.selectedColor || ''}`} className="flex gap-4">
-                  {/* Thumbnail */}
                   <div className="w-20 h-24 bg-secondary flex-shrink-0 overflow-hidden">
                     {item.product.image_url ? (
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                        No img
-                      </div>
+                      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">No img</div>
                     )}
                   </div>
 
-                  {/* Details */}
                   <div className="flex-1 flex flex-col justify-between min-w-0">
                     <div>
-                      <p className="text-xs text-muted-foreground tracking-wider uppercase font-body">
-                        {item.product.category}
-                      </p>
+                      <p className="text-xs text-muted-foreground tracking-wider uppercase font-body">{item.product.category}</p>
                       <h4 className="font-display text-sm capitalize truncate">{item.product.name}</h4>
                       {(item.selectedSize || item.selectedColor) && (
                         <p className="text-xs text-muted-foreground font-body">
@@ -99,9 +64,7 @@ const CartDrawer = () => {
                           {item.selectedColor ? `Color: ${item.selectedColor}` : ''}
                         </p>
                       )}
-                      <p className="font-body font-semibold text-sm mt-0.5">
-                        ${displayPrice.toFixed(2)}
-                      </p>
+                      <p className="font-body font-semibold text-sm mt-0.5">${displayPrice.toFixed(2)}</p>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -141,10 +104,10 @@ const CartDrawer = () => {
               </div>
 
               <Button
-                onClick={whatsappOrder}
+                onClick={() => { setIsOpen(false); setCheckoutOpen(true); }}
                 className="w-full py-6 text-xs tracking-[0.2em] uppercase font-body font-medium"
               >
-                Order on WhatsApp
+                Proceed to Checkout
               </Button>
 
               <button
@@ -158,6 +121,8 @@ const CartDrawer = () => {
         )}
       </SheetContent>
     </Sheet>
+    <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} />
+    </>
   );
 };
 
