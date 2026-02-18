@@ -44,7 +44,7 @@ const CartDrawer = () => {
       return `${i.product.name}${i.selectedSize ? ` | Size: ${i.selectedSize}` : ''}${i.selectedColor ? ` | Color: ${i.selectedColor}` : ''} | ${i.product.category}${i.product.subcategory ? ` / ${i.product.subcategory}` : ''} | Price: $${displayPrice.toFixed(2)}${i.quantity > 1 ? ` x${i.quantity}` : ''}`;
     });
     const text = `Hello, I want to order:\n${lines.join("\n")}${lines.length > 1 ? `\n\nTotal: $${effectiveTotal.toFixed(2)}` : ''}`;
-    const url = `https://web.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(text)}`;
+    const url = `https://api.whatsapp.com/send?phone=${phoneDigits}&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 

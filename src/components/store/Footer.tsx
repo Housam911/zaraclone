@@ -44,7 +44,7 @@ const Footer = () => {
             <ul className="space-y-2 font-body text-sm text-primary-foreground/70">
               <li>
                 <a
-                  href={`https://web.whatsapp.com/send?phone=${phoneDigits}`}
+                  href={`https://api.whatsapp.com/send?phone=${phoneDigits}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gold transition-colors"
