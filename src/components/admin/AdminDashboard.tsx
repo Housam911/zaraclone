@@ -231,7 +231,7 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
                       ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                       : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                   }`}>
-                    {product.in_stock ? "In Stock" : "Out of Stock"}
+                    {product.in_stock ? `Qty: ${(product as any).stock_quantity ?? '?'}` : "Out of Stock"}
                   </span>
                 </div>
 
@@ -308,7 +308,9 @@ const ProductForm = ({
   const [subcategory, setSubcategory] = useState(product?.subcategory || "");
   const [selectedSizes, setSelectedSizes] = useState<string[]>(product?.sizes || []);
   const [selectedColors, setSelectedColors] = useState<string[]>(product?.colors || []);
-  const [inStock, setInStock] = useState(product?.in_stock ?? true);
+  const [stockQuantity, setStockQuantity] = useState(
+    (product as any)?.stock_quantity?.toString() ?? "0"
+  );
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(product?.image_url || "");
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
@@ -431,7 +433,7 @@ const ProductForm = ({
         images: allImages.length > 0 ? allImages : null,
         sizes: selectedSizes.length > 0 ? selectedSizes : null,
         colors: selectedColors.length > 0 ? selectedColors : null,
-        in_stock: inStock,
+        stock_quantity: parseInt(stockQuantity) || 0,
       };
 
       if (product) {
@@ -690,16 +692,23 @@ const ProductForm = ({
             )}
           </div>
 
-          {/* In Stock toggle */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="in-stock"
-              checked={inStock}
-              onCheckedChange={(checked) => setInStock(checked === true)}
-            />
-            <label htmlFor="in-stock" className="text-sm font-body cursor-pointer">
-              In Stock
+          {/* Stock Quantity */}
+          <div>
+            <label className="block text-xs tracking-[0.1em] uppercase font-body font-medium mb-2">
+              Stock Quantity
             </label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              placeholder="0"
+              value={stockQuantity}
+              onChange={(e) => setStockQuantity(e.target.value)}
+              className="bg-secondary border-none py-5 rounded-none w-32"
+            />
+            <p className="text-xs text-muted-foreground font-body mt-1">
+              {parseInt(stockQuantity) > 0 ? "In Stock" : "Out of Stock"}
+            </p>
           </div>
 
           <Button
