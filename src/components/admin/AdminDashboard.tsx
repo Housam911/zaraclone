@@ -220,12 +220,19 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
                   </p>
                 </div>
 
-                {/* Price */}
-                <div className="text-right">
+                {/* Price & Stock */}
+                <div className="text-right flex flex-col items-end gap-1">
                   <p className="font-body font-semibold">${product.price.toFixed(2)}</p>
                   {product.original_price && (
                     <p className="text-xs text-muted-foreground line-through">${product.original_price.toFixed(2)}</p>
                   )}
+                  <span className={`text-[10px] tracking-wider uppercase font-body font-medium px-2 py-0.5 ${
+                    product.in_stock
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  }`}>
+                    {product.in_stock ? "In Stock" : "Out of Stock"}
+                  </span>
                 </div>
 
                 {/* Actions */}
@@ -301,6 +308,7 @@ const ProductForm = ({
   const [subcategory, setSubcategory] = useState(product?.subcategory || "");
   const [selectedSizes, setSelectedSizes] = useState<string[]>(product?.sizes || []);
   const [selectedColors, setSelectedColors] = useState<string[]>(product?.colors || []);
+  const [inStock, setInStock] = useState(product?.in_stock ?? true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(product?.image_url || "");
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
@@ -423,6 +431,7 @@ const ProductForm = ({
         images: allImages.length > 0 ? allImages : null,
         sizes: selectedSizes.length > 0 ? selectedSizes : null,
         colors: selectedColors.length > 0 ? selectedColors : null,
+        in_stock: inStock,
       };
 
       if (product) {
@@ -679,6 +688,18 @@ const ProductForm = ({
                 No colors configured. Add them in Settings.
               </p>
             )}
+          </div>
+
+          {/* In Stock toggle */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="in-stock"
+              checked={inStock}
+              onCheckedChange={(checked) => setInStock(checked === true)}
+            />
+            <label htmlFor="in-stock" className="text-sm font-body cursor-pointer">
+              In Stock
+            </label>
           </div>
 
           <Button
