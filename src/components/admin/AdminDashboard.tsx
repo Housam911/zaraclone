@@ -7,11 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, LogOut, Edit, X, Upload, ArrowLeft, Search, Settings } from "lucide-react";
+import { Plus, Trash2, LogOut, Edit, X, Upload, ArrowLeft, Search, Settings, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import AdminSettings from "./AdminSettings";
 import OrdersManager from "./OrdersManager";
+import ReportsManager from "./ReportsManager";
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -22,7 +23,7 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [editingProduct, setEditingProduct] = useState<Tables<"products"> | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"products" | "orders" | "settings">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "orders" | "reports" | "settings">("products");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -92,6 +93,17 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
                 Orders
               </button>
               <button
+                onClick={() => setActiveTab("reports")}
+                className={`px-4 py-2 text-xs tracking-[0.1em] uppercase font-body font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === "reports"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-muted"
+                }`}
+              >
+                <BarChart3 className="h-3.5 w-3.5" />
+                Reports
+              </button>
+              <button
                 onClick={() => setActiveTab("settings")}
                 className={`px-4 py-2 text-xs tracking-[0.1em] uppercase font-body font-medium transition-all flex items-center gap-1.5 ${
                   activeTab === "settings"
@@ -132,6 +144,8 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
           <AdminSettings />
         ) : activeTab === "orders" ? (
           <OrdersManager />
+        ) : activeTab === "reports" ? (
+          <ReportsManager />
         ) : (
         <>
         {/* Product form modal */}
