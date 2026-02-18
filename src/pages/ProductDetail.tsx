@@ -242,10 +242,11 @@ const ProductDetail = () => {
 
               <button
                 onClick={handleAddToCart}
-                className="flex items-center justify-center gap-3 w-full bg-primary text-primary-foreground py-4 text-xs tracking-[0.2em] uppercase font-body font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                disabled={!product.in_stock}
+                className="flex items-center justify-center gap-3 w-full bg-primary text-primary-foreground py-4 text-xs tracking-[0.2em] uppercase font-body font-medium hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary disabled:hover:text-primary-foreground"
               >
                 <ShoppingBag className="h-4 w-4" />
-                Add to Bag
+                {product.in_stock ? "Add to Bag" : "Out of Stock"}
               </button>
             </div>
 

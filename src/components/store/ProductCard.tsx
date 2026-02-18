@@ -31,6 +31,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         )}
 
+        {/* Out of stock badge */}
+        {!product.in_stock && (
+          <span className="absolute top-3 right-3 bg-foreground/80 text-background text-[10px] font-body font-semibold px-2 py-1 tracking-wider uppercase">
+            Out of Stock
+          </span>
+        )}
+
         {/* Discount badge */}
         {discountPercent && (
           <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-xs font-body font-semibold px-2.5 py-1 tracking-wider">
@@ -42,15 +49,17 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-300" />
 
         {/* Quick actions */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}
-            className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground text-center py-3 text-xs tracking-[0.2em] uppercase font-body font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Add to Bag
-          </button>
-        </div>
+        {product.in_stock && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}
+              className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground text-center py-3 text-xs tracking-[0.2em] uppercase font-body font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Add to Bag
+            </button>
+          </div>
+        )}
       </div>
       </Link>
 
