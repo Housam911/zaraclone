@@ -12,10 +12,11 @@ interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  addItem: (product: Tables<"products">, selectedSize?: string | null, selectedColor?: string | null) => void;
+  addItem: (product: Tables<"products">, selectedSize?: string | null, selectedColor?: string | null) => boolean;
   removeItem: (productId: string, selectedSize?: string | null, selectedColor?: string | null) => void;
   updateQuantity: (productId: string, quantity: number, selectedSize?: string | null, selectedColor?: string | null) => void;
   clearCart: () => void;
+  getItemQuantity: (productId: string, selectedSize?: string | null, selectedColor?: string | null) => number;
   totalItems: number;
   totalPrice: number;
 }
@@ -26,10 +27,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  const addItem = useCallback((product: Tables<"products">, selectedSize?: string | null, selectedColor?: string | null) => {
+  const addItem = useCallback((product: Tables<"products">, selectedSize?: string | null, selectedColor?: string | null): boolean => {
+    const stockQty = (product as any).stock_quantity ?? Infinity;
+    const cartKey = `${product.id}-${selectedSize || ''}-${selectedColor || ''}`;
+    
+    let success = true;
     setItems((prev) => {
-      const cartKey = `${product.id}-${selectedSize || ''}-${selectedColor || ''}`;
       const existing = prev.find((i) => `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` === cartKey);
+      const currentQty = existing ? existing.quantity : 0;
+      if (currentQty >= stockQty) {
+        success = false;
+        return prev;
+      }
       if (existing) {
         return prev.map((i) =>
           `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` === cartKey
@@ -39,7 +48,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       return [...prev, { product, quantity: 1, selectedSize, selectedColor }];
     });
-    setIsOpen(true);
+    if (success) setIsOpen(true);
+    return success;
   }, []);
 
   const removeItem = useCallback((productId: string, selectedSize?: string | null, selectedColor?: string | null) => {
@@ -53,10 +63,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setItems((prev) => prev.filter((i) => `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` !== cartKey));
     } else {
       setItems((prev) =>
-        prev.map((i) => (`${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` === cartKey ? { ...i, quantity } : i))
+        prev.map((i) => {
+          if (`${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` !== cartKey) return i;
+          const stockQty = (i.product as any).stock_quantity ?? Infinity;
+          return { ...i, quantity: Math.min(quantity, stockQty) };
+        })
       );
     }
   }, []);
+
+  const getItemQuantity = useCallback((productId: string, selectedSize?: string | null, selectedColor?: string | null) => {
+    const cartKey = `${productId}-${selectedSize || ''}-${selectedColor || ''}`;
+    const item = items.find((i) => `${i.product.id}-${i.selectedSize || ''}-${i.selectedColor || ''}` === cartKey);
+    return item?.quantity || 0;
+  }, [items]);
 
   const clearCart = useCallback(() => setItems([]), []);
 
@@ -65,7 +85,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <CartContext.Provider
-      value={{ items, isOpen, setIsOpen, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}
+      value={{ items, isOpen, setIsOpen, addItem, removeItem, updateQuantity, clearCart, getItemQuantity, totalItems, totalPrice }}
     >
       {children}
     </CartContext.Provider>

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 import { useGlobalDiscount, getEffectivePricing } from "@/hooks/use-global-discount";
 import Navbar from "@/components/store/Navbar";
 import Footer from "@/components/store/Footer";
@@ -11,7 +12,8 @@ import CartDrawer from "@/components/store/CartDrawer";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { addItem } = useCart();
+  const { addItem, getItemQuantity } = useCart();
+  const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -79,9 +81,21 @@ const ProductDetail = () => {
     });
   }
 
+  const stockQty = (product as any).stock_quantity ?? Infinity;
+  const inCartQty = getItemQuantity(product.id, selectedSize, selectedColor);
+  const maxAddable = Math.max(0, stockQty - inCartQty);
+
   const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
+    const qtyToAdd = Math.min(quantity, maxAddable);
+    if (qtyToAdd <= 0) {
+      toast({ title: "Stock limit reached", description: `You already have the maximum quantity in your bag.`, variant: "destructive" });
+      return;
+    }
+    for (let i = 0; i < qtyToAdd; i++) {
       addItem(product, selectedSize, selectedColor);
+    }
+    if (qtyToAdd < quantity) {
+      toast({ title: "Quantity adjusted", description: `Only ${qtyToAdd} more available. Added ${qtyToAdd} to bag.` });
     }
   };
 
@@ -232,8 +246,9 @@ const ProductDetail = () => {
                   </button>
                   <span className="px-6 font-body font-medium text-sm">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="p-3 hover:bg-secondary transition-colors"
+                    onClick={() => setQuantity(Math.min(quantity + 1, stockQty))}
+                    className="p-3 hover:bg-secondary transition-colors disabled:opacity-30"
+                    disabled={quantity >= stockQty}
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -251,7 +266,7 @@ const ProductDetail = () => {
             </div>
 
             <p className={`font-body text-xs tracking-wider ${product.in_stock ? "text-green-600" : "text-destructive"}`}>
-              {product.in_stock ? "In Stock" : "Out of Stock"}
+              {product.in_stock ? `In Stock (${stockQty} available)` : "Out of Stock"}
             </p>
           </div>
         </div>
